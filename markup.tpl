@@ -16,11 +16,11 @@ POST参数:
 {%- endfor %}
 {%- endif %}
 
-{%- if response_dict %}
+{%- if response_item_list %}
 返回字段说明:
 ||Name||Type||Description||
-{%- for k, v in response_dict.items() %}
-| {{ k }} | {{ v }} | |
+{%- for item in response_item_list %}
+| {{ item.name }} | {{ item.type }} | {{ item.description }} |
 {%- endfor %}
 {%- endif %}
 
