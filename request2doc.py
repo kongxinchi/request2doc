@@ -11,6 +11,7 @@ import os
 import json
 import urllib2
 import urllib
+import cookielib
 import hashlib
 from jinja2 import Environment
 
@@ -19,13 +20,42 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 class ExpandItem(object):
     def __init__(self, route, values, options=None):
-        self.route = route                                                 # 从顶到叶子级键值的数组 e.g. ['a', 'b', 'c'...]
-        self.values = values                                               # 可能的值
+        self.route = route                                        # 从顶到叶子级键值的数组 e.g. ['a', 'b', 'c'...]
+        self.values = values                                      # 可能的值
         self.options = [] if options is None else options        # 最子集key可能的键值
 
+    @staticmethod
+    def pretty_type_name(value):
+        if value is None:
+            return None
+        elif type(value) == list:
+            sub_types = []
+            for sub_v in value:
+                sub_type = ExpandItem.pretty_type_name(sub_v)
+                if sub_type is None or sub_type in sub_types: continue
+                sub_types.append(sub_type)
+            if len(sub_types) == 0:
+                return None
+            return "List<%s>" % "/".join(sub_types)
+        elif type(value) == unicode or type(value) == str:
+            return "String"
+        else:
+            return type(value).__name__.capitalize()
+
+    def extend_values(self, values):
+        self.values.extend(values)
+
+    def extend_options(self, options):
+        self.options.extend(options)
+        self.options = sorted(list(set(self.options)))
+
     def types(self):
-        res = [unicode(type(v)) for v in self.values]
-        return list(set(res))
+        res = []
+        for value in self.values:
+            type_name = self.pretty_type_name(value)
+            if type_name is None or type_name in res: continue
+            res.append(type_name)
+        return sorted(res)
 
     def join_slice(self, start, end, delimiter='.'):
         return delimiter.join(self.route[start: end])
@@ -48,15 +78,25 @@ class ExpandItem(object):
     def __repr__(self):
         return unicode({'route': self.route, 'values': self.values, 'options': self.options})
 
+    def __cmp__(self, other):
+        if self.full_key() == other.full_key():
+            return 0
+        elif self.full_key() < other.full_key():
+            return -1
+        else:
+            return 1
+
 
 class DictMixer(object):
     """用于字典数据的后处理，将字典拍扁后合并同类的Key"""
-    def __init__(self, data):
+    def __init__(self, data, full_key_startswith=None):
         self.__origin_data = data
         self.__expand_item_list = None
         self.__max_depth = None
         self.delimiter = '.'
-        self.symbol = 'x'
+        self.symbol = '\*'
+        self.full_key_startswith = full_key_startswith
+        self.route_startswith = full_key_startswith.split('.') if full_key_startswith else []
 
     @staticmethod
     def is_leaf_item(item):
@@ -70,9 +110,12 @@ class DictMixer(object):
 
     def expand_item_recursive(self, route, item):
         """递归获取ExpandItem"""
+        if self.full_key_startswith and not self.full_key_startswith.startswith('.'.join(route[0: len(self.route_startswith)])):
+            return []
+
         result = []
         if self.is_leaf_item(item):
-            result.append(ExpandItem(route, [item]))
+            result.append(ExpandItem(route[len(self.route_startswith):], [item]))
         elif type(item) == list:
             for i, sub_item in enumerate(item):
                 sub_route = route + [unicode(i)]
@@ -166,7 +209,8 @@ class DictMixer(object):
             key = item.full_key()
             if not dic.has_key(key):
                 dic[key] = ExpandItem(item.route[:], [], item.options[:])
-            dic[key].values.extend(item.values)
+            dic[key].extend_values(item.values)
+            dic[key].extend_options(item.options)
         self.__expand_item_list = sorted(dic.values())
 
 
@@ -179,26 +223,43 @@ class Request2Doc(object):
         self.response_body = None
         self.response_data = None
         self.parse = json.loads
+        self.slice_startswith = None
+        self.cookie = None
+
+    def set_slice_startswith(self, slice_startswith):
+        self.slice_startswith = slice_startswith
+
+    def set_cookie_jar(self, cookie_jar_path):
+        self.cookie = cookielib.MozillaCookieJar()
+        self.cookie.load(cookie_jar_path, ignore_discard=True, ignore_expires=True)
 
     def request(self):
+        """发送请求"""
         url = self.url + '?' + urllib.urlencode(self.args)
         req_data = urllib.urlencode(self.forms) if self.forms else None
         request = urllib2.Request(url, req_data)
         request.get_method = lambda: self.method
-        res = urllib2.urlopen(request)
+        if self.cookie is not None:
+            opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie))
+        else:
+            opener = urllib2.build_opener()
+        res = opener.open(request)
         self.response_body = res.read()
         return True
 
     def get_response_data(self):
+        """解析请求返回的数据"""
         if not self.response_data:
             self.response_data = self.parse(self.response_body)
         return self.response_data
 
     def render_string(self, tpl_path):
+        """渲染数据，输出为字符串"""
         request_get_dict = self.args
         request_post_dict = self.forms
 
-        mixer = DictMixer(self.get_response_data())
+        # 处理接口返回的数据为可展示的形式
+        mixer = DictMixer(self.get_response_data(), self.slice_startswith)
         mixer.replace_similar_items_route()
         mixer.merge_items()
 
@@ -212,6 +273,7 @@ class Request2Doc(object):
                     response_body=json.dumps(self.get_response_data(), indent=2))
 
     def render_save_as(self, tpl_path, output_path):
+        """渲染数据，并保存到指定路径"""
         content = self.render_string(tpl_path)
         with open(output_path, 'wb') as f:
             f.write(content.encode('utf-8'))
@@ -221,9 +283,11 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('url', nargs='?', action='store', default='', help=u'URL')
-    parser.add_argument('-d', '--data', nargs='?', action='store', default="", help=u'POST data, e.g. key1=value&key2=value')
-    parser.add_argument('-t', '--template', nargs='?', action='store', default=os.path.join(CURRENT_DIR, 'markup.tpl'), help=u'Template file path')
-    parser.add_argument('-o', '--output', nargs='?', action='store', help=u'Output file path')
+    parser.add_argument('-d', '--data', nargs='?', action='store', default="", help=u'POST数据键值对, e.g. key1=value&key2=value')
+    parser.add_argument('-t', '--template', nargs='?', action='store', default=os.path.join(CURRENT_DIR, 'markup.tpl'), help=u'模板文件路径，默认为markup.tpl')
+    parser.add_argument('-o', '--output', nargs='?', action='store', help=u'将文件输出到指定文件，默认为打印到屏幕')
+    parser.add_argument('-s', '--slice-startswith', nargs='?', action='store', help=u'只打印返回数据中指定域的数据, e.g. data.results')
+    parser.add_argument('-b', '--cookie-jar', nargs='?', action='store', help=u'cookie-jar文件路径')
     args = parser.parse_args()
 
     parsed = urlparse.urlparse(args.url)
@@ -233,8 +297,9 @@ def main():
     method = 'POST' if args.data else 'GET'
 
     handler = Request2Doc(url, method, request_args, request_forms)
+    handler.set_slice_startswith(args.slice_startswith)
+    handler.set_cookie_jar(args.cookie_jar)
     if not handler.request():
-        # TODO
         pass
 
     if args.output:
@@ -243,8 +308,4 @@ def main():
         print handler.render_string(args.template)
 
 if __name__ == '__main__':
-    # exit(main())
-    md = Request2Doc('http://zxlocal.test.17zuoye.net/teacher/homework/search', 'GET', {'status': 0})
-    print md.request()
-    print md.response_body
-    print md.render_string('markup.tpl')
+    exit(main())
