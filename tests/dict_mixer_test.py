@@ -867,12 +867,6 @@ class DictMixerTestCase(unittest.TestCase):
         for item in mixer.expand_item_list():
             print item
 
-    def test_request2doc(self):
-        md = Request2Doc('http://zxlocal.test.17zuoye.net/teacher/homework/search', 'GET', {'status': 0})
-        md.set_cookie_jar('D:\\coding\\request2doc\\cookiejar')
-        print md.request()
-        print md.response_body
-        print md.render_string('../markup.tpl')
 
 if __name__ == '__main__':
     unittest.main()
