@@ -27,8 +27,9 @@
                             cookie-jar文件路径
 
 ## Example:
+
     python request2doc.py http://any/get/url?key1=value1&key2=value2
     python request2doc.py -d"key1=value1&key2=value2" http://any/get/url
     
-    ![image](https://raw.githubusercontent.com/kong-lo/request2doc/master/markup_example.png)
+![image](https://raw.githubusercontent.com/kong-lo/request2doc/master/markup_example.png)
    
