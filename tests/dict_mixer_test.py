@@ -7,7 +7,7 @@ sys.path.append('../')
 from request2doc import DictMixer, Request2Doc
 
 
-class ParserTestCase(unittest.TestCase):
+class DictMixerTestCase(unittest.TestCase):
     def test_dict_mixer(self):
         data = '''
         {

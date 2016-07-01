@@ -73,7 +73,7 @@ class ExpandItem(object):
         self.route[i] = v
 
     def row_data(self):
-        return {'name': self.full_key(), 'type': "/".join(self.types()), 'description': "/".join(self.options)}
+        return {'name': self.full_key(), 'type': "|".join(self.types()), 'description': "|".join(self.options)}
 
     def __repr__(self):
         return unicode({'route': self.route, 'values': self.values, 'options': self.options})
@@ -94,7 +94,7 @@ class DictMixer(object):
         self.__expand_item_list = None
         self.__max_depth = None
         self.delimiter = '.'
-        self.symbol = '\*'
+        self.symbol = '*'
         self.full_key_startswith = full_key_startswith
         self.route_startswith = full_key_startswith.split('.') if full_key_startswith else []
 
@@ -267,9 +267,9 @@ class Request2Doc(object):
             .from_string(open(tpl_path, 'rb').read().decode('utf-8'))\
             .render(url=self.url,
                     method=self.method,
-                    request_get_dict=request_get_dict,
-                    request_post_dict=request_post_dict,
-                    response_item_list=[item.row_data() for item in mixer.expand_item_list()],
+                    request_get_items=[ExpandItem([k], [v]).row_data() for k, v in request_get_dict.items()],
+                    request_post_items=[ExpandItem([k], [v]).row_data() for k, v in request_post_dict.items()],
+                    response_items=[item.row_data() for item in mixer.expand_item_list()],
                     response_body=json.dumps(self.get_response_data(), indent=2))
 
     def render_save_as(self, tpl_path, output_path):

@@ -1,26 +1,27 @@
-{{ url }}
+h3.{{ url.split('/')[3:]|join('/') }}
 METHOD: {{ method }}
-{%- if request_get_dict %}
+----
+{%- if request_get_items %}
 GET参数:
 ||Name||Type||Description||
-{%- for k, v in request_get_dict.items() %}
-| {{ k }} | {{ v }} | |
+{%- for item in request_get_items %}
+| {{ item.name|replace('*', '\*') }} | {{ item.type|replace('|', '\|') }} | {{ item.description|replace('|', '\|') }} |
 {%- endfor %}
 {%- endif %}
 
-{%- if request_post_dict %}
+{%- if request_post_items %}
 POST参数:
 ||Name||Type||Description||
-{%- for k, v in request_post_dict.items() %}
-| {{ k }} | {{ v }} | |
+{%- for item in request_post_items %}
+| {{ item.name|replace('*', '\*') }} | {{ item.type|replace('|', '\|') }} | {{ item.description|replace('|', '\|') }} |
 {%- endfor %}
 {%- endif %}
 
-{%- if response_item_list %}
+{%- if response_items %}
 返回字段说明:
 ||Name||Type||Description||
-{%- for item in response_item_list %}
-| {{ item.name }} | {{ item.type }} | {{ item.description }} |
+{%- for item in response_items %}
+| {{ item.name|replace('*', '\*') }} | {{ item.type|replace('|', '\|') }} | {{ item.description|replace('|', '\|') }} |
 {%- endfor %}
 {%- endif %}
 
