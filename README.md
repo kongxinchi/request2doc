@@ -2,7 +2,7 @@
 
     Auto generate doc file by request parameter and response body. 
     
-    自动根据发送的请求生成API说明文档. 文档内容可定制，默认为wiki markup格式.
+    自动根据发送的请求生成API说明文档. 文档模板可定制，默认为wiki markup格式.
 
 ## Require
     
