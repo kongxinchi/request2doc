@@ -33,7 +33,7 @@
 ## Example:
 
     python request2doc.py http://any/get/url?key1=value1&key2=value2
-    python request2doc.py -d "key1=value1&key2=value2" http://any/get/url
+    python request2doc.py -d "key1=value1&key2=value2" http://any/post/url
 
 ## Output
     h3.teacher/homework/search
