@@ -189,7 +189,7 @@ class DictMixer(object):
                 if len(prefix_list) > 1:
                     options = []
                     for prefix in prefix_list:
-                        for chd_index, item in enumerate(prefix_children[prefix]):
+                        for item in prefix_children[prefix]:
                             item.set_route_key(i, self.symbol)
                         options.append(prefix.split(self.delimiter)[-1])
 
