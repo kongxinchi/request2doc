@@ -30,6 +30,38 @@
 
     python request2doc.py http://any/get/url?key1=value1&key2=value2
     python request2doc.py -d"key1=value1&key2=value2" http://any/get/url
+
+## Output
+    h3.teacher/homework/search
+    METHOD: GET
+    ----
+    GET参数:
+    ||Name||Type||Description||
+    | status | Int |  |
+    返回字段说明:
+    ||Name||Type||Description||
+    | a.\* |  | 0\|1 |
+    | a.\*.a | Float\|Int |  |
+    | a.\*.b | Int\|String |  |
     
+    {code:title=返回JSON样例|collapse=true}
+    {
+      "data": {
+        "a": [
+          {
+            "a": 1, 
+            "b": 2
+          }, 
+          {
+            "a": 1.1, 
+            "b": "string"
+          }
+        ]
+      }, 
+      "message": "", 
+      "error_code": 0, 
+      "success": true
+    }
+    {code}
 ![image](https://raw.githubusercontent.com/kong-lo/request2doc/master/markup_example.png)
    
