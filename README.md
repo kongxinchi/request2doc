@@ -1,7 +1,8 @@
 # request2doc
 
     Auto generate doc file by request parameter and response body. 
-    自动根据发送的请求生成API说明文档.
+    
+    自动根据发送的请求生成API说明文档. 文档内容可定制，默认为wiki markup格式.
 
 ## Usage
 
@@ -26,6 +27,8 @@
                             cookie-jar文件路径
 
 ## Example:
-    python request2doc.py http://domain/one-method-get-url?key1=value1&key2=value2
-    python request2doc.py -d"key1=value1&key2=value2" http://domain/one-method-post-url
+    python request2doc.py http://any/get/url?key1=value1&key2=value2
+    python request2doc.py -d"key1=value1&key2=value2" http://any/get/url
+    
+    ![image](https://raw.githubusercontent.com/kong-lo/request2doc/master/markup_example.png)
    
