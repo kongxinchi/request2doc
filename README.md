@@ -4,6 +4,10 @@
     
     自动根据发送的请求生成API说明文档. 文档内容可定制，默认为wiki markup格式.
 
+## Require
+    
+    pip install jinja2
+
 ## Usage
 
     usage: request2doc.py [-h] [-d [DATA]] [-t [TEMPLATE]] [-o [OUTPUT]]
