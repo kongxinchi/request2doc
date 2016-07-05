@@ -297,8 +297,10 @@ def main():
     method = 'POST' if args.data else 'GET'
 
     handler = Request2Doc(url, method, request_args, request_forms)
-    handler.set_slice_startswith(args.slice_startswith)
-    handler.set_cookie_jar(args.cookie_jar)
+    if args.slice_startswith:
+        handler.set_slice_startswith(args.slice_startswith)
+    if args.cookie_jar:
+        handler.set_cookie_jar(args.cookie_jar)
     if not handler.request():
         pass
 
