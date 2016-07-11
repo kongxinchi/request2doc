@@ -10,9 +10,9 @@ from request2doc import DictMixer, Request2Doc
 class Request2DocTestCase(unittest.TestCase):
 
     def test_request2doc(self):
-        md = Request2Doc('http://zxlocal.test.17zuoye.net/teacher/homework/search', 'GET', {'status': 0})
+        md = Request2Doc('http://zxlocal.test.17zuoye.net/teacher/homework/search', 'GET', {'status': '0'})
         md.slice_startswith = "data"
-        md.set_cookie_jar('D:\\coding\\request2doc\\cookiejar')
+        # md.set_cookie_jar('D:\\coding\\request2doc\\cookiejar')
         print md.request()
         print md.response_body
         print md.render_string('../markup.tpl')

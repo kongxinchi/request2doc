@@ -13,32 +13,44 @@ import urllib2
 import urllib
 import cookielib
 import hashlib
+import re
 from jinja2 import Environment
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 
 class ExpandItem(object):
-    def __init__(self, route, values, options=None):
+    def __init__(self, route, values, options=None, guess_type=False):
         self.route = route                                        # 从顶到叶子级键值的数组 e.g. ['a', 'b', 'c'...]
         self.values = values                                      # 可能的值
         self.options = [] if options is None else options        # 最子集key可能的键值
+        self.guess_type = guess_type
 
     @staticmethod
-    def pretty_type_name(value):
+    def guess_string_type(value):
+        if type(value) == unicode or type(value) == str:
+            if value.isdigit():
+                return 'Int'
+            elif re.search(ur'^[-+]?[0-9]+\.[0-9]+$', value):
+                return 'Float'
+            else:
+                return 'String'
+        return None
+
+    def pretty_type_name(self, value):
         if value is None:
             return None
         elif type(value) == list:
             sub_types = []
             for sub_v in value:
-                sub_type = ExpandItem.pretty_type_name(sub_v)
+                sub_type = self.pretty_type_name(sub_v)
                 if sub_type is None or sub_type in sub_types: continue
                 sub_types.append(sub_type)
             if len(sub_types) == 0:
                 return None
             return "List<%s>" % "/".join(sub_types)
         elif type(value) == unicode or type(value) == str:
-            return "String"
+            return ExpandItem.guess_string_type(value) if self.guess_type else 'String'
         else:
             return type(value).__name__.capitalize()
 
@@ -267,8 +279,8 @@ class Request2Doc(object):
             .from_string(open(tpl_path, 'rb').read().decode('utf-8'))\
             .render(url=self.url,
                     method=self.method,
-                    request_get_items=[ExpandItem([k], [v]).row_data() for k, v in request_get_dict.items()],
-                    request_post_items=[ExpandItem([k], [v]).row_data() for k, v in request_post_dict.items()],
+                    request_get_items=[ExpandItem([k], [v], None, True).row_data() for k, v in request_get_dict.items()],
+                    request_post_items=[ExpandItem([k], [v], None, True).row_data() for k, v in request_post_dict.items()],
                     response_items=[item.row_data() for item in mixer.expand_item_list()],
                     response_body=json.dumps(self.get_response_data(), indent=2))
 
