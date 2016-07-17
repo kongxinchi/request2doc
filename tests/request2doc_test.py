@@ -15,7 +15,7 @@ class Request2DocTestCase(unittest.TestCase):
         # md.set_cookie_jar('D:\\coding\\request2doc\\cookiejar')
         print md.request()
         print md.response_body
-        print md.render_string('../markup.tpl')
+        print md.render_string('../templates/markup.tpl')
 
 if __name__ == '__main__':
     unittest.main()

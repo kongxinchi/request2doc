@@ -312,7 +312,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('url', nargs='?', action='store', default='', help=u'URL')
     parser.add_argument('-d', '--data', nargs='?', action='store', default="", help=u'POST数据键值对, e.g. key1=value&key2=value')
-    parser.add_argument('-t', '--template', nargs='?', action='store', default=os.path.join(CURRENT_DIR, 'markup.tpl'), help=u'模板文件路径，默认为markup.tpl')
+    parser.add_argument('-t', '--template', nargs='?', action='store', default=os.path.join(CURRENT_DIR, 'templates', 'markup.tpl'), help=u'模板文件路径，默认为markup.tpl')
     parser.add_argument('-o', '--output', nargs='?', action='store', help=u'将文件输出到指定文件，默认为打印到屏幕')
     parser.add_argument('-s', '--slice-startswith', nargs='?', action='store', help=u'只打印返回数据中指定域的数据, e.g. data.results')
     parser.add_argument('-b', '--cookie-jar', nargs='?', action='store', help=u'cookie-jar文件路径')
