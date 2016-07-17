@@ -237,6 +237,7 @@ class Request2Doc(object):
         self.parse = json.loads
         self.slice_startswith = None
         self.cookie = None
+        self.headers = []
 
     def set_slice_startswith(self, slice_startswith):
         self.slice_startswith = slice_startswith
@@ -245,16 +246,31 @@ class Request2Doc(object):
         self.cookie = cookielib.MozillaCookieJar()
         self.cookie.load(cookie_jar_path, ignore_discard=True, ignore_expires=True)
 
+    def set_headers(self, headers):
+        for header in headers:
+            parts = header.split(':')
+            if len(parts) != 2: continue
+            self.headers.append(
+                (parts[0].strip(), parts[1].strip())
+            )
+
     def request(self):
         """发送请求"""
         url = self.url + '?' + urllib.urlencode(self.args)
         req_data = urllib.urlencode(self.forms) if self.forms else None
         request = urllib2.Request(url, req_data)
         request.get_method = lambda: self.method
+
+        # 添加头
+        for header_key, header_value in self.headers:
+            request.add_header(header_key, header_value)
+
+        # 添加cookie-jar
         if self.cookie is not None:
             opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie))
         else:
             opener = urllib2.build_opener()
+
         res = opener.open(request)
         self.response_body = res.read()
         return True
@@ -300,6 +316,7 @@ def main():
     parser.add_argument('-o', '--output', nargs='?', action='store', help=u'将文件输出到指定文件，默认为打印到屏幕')
     parser.add_argument('-s', '--slice-startswith', nargs='?', action='store', help=u'只打印返回数据中指定域的数据, e.g. data.results')
     parser.add_argument('-b', '--cookie-jar', nargs='?', action='store', help=u'cookie-jar文件路径')
+    parser.add_argument('-H', '--header', nargs='?', action='append', help=u'自定义的附加请求头')
     args = parser.parse_args()
 
     parsed = urlparse.urlparse(args.url)
@@ -313,6 +330,9 @@ def main():
         handler.set_slice_startswith(args.slice_startswith)
     if args.cookie_jar:
         handler.set_cookie_jar(args.cookie_jar)
+    if args.header:
+        handler.set_headers(args.header)
+
     if not handler.request():
         pass
 
