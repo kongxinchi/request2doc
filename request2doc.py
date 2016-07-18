@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Convert request parameters and response JSON to doc format
-Author: xinchi.kong
+Author: Konglo
 """
 
 import sys

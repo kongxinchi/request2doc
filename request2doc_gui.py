@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 request2doc GUI
-Author: xinchi.kong
+Author: Konglo
 """
 
 import wx
