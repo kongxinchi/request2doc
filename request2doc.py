@@ -227,10 +227,9 @@ class DictMixer(object):
 
 
 class Request2Doc(object):
-    def __init__(self, url, method, args=None, forms=None):
+    def __init__(self, url='', method='', forms=None):
         self.url = url
         self.method = method
-        self.args = args if type(args) == dict else {}
         self.forms = forms if type(forms) == dict else {}
         self.response_body = None
         self.response_data = None
@@ -238,6 +237,11 @@ class Request2Doc(object):
         self.slice_startswith = None
         self.cookie = None
         self.headers = []
+        self.errors = []
+
+    def args(self):
+        parsed = urlparse.urlparse(self.url)
+        return {k: v[0] for k, v in urlparse.parse_qs(parsed.query).items()}
 
     def set_slice_startswith(self, slice_startswith):
         self.slice_startswith = slice_startswith
@@ -255,13 +259,24 @@ class Request2Doc(object):
             )
 
     def validate(self):
-        pass # TODO
+        self.errors = []
+        if not self.url:
+            self.errors.append({'message': u'URL is Empty'})
+        else:
+            parsed = urlparse.urlparse(self.url)
+            if not (parsed.scheme in ['http', 'https'] and parsed.netloc):
+                self.errors.append({'message': u'URL is illegal'})
+        if not self.method:
+            self.errors.append({'message': u'Method is Empty'})
+        return len(self.errors) == 0
+
+    def error_message(self):
+        return '\n'.join([e['message'] for e in self.errors])
 
     def request(self):
         """发送请求"""
-        url = self.url + '?' + urllib.urlencode(self.args)
         req_data = urllib.urlencode(self.forms) if self.forms else None
-        request = urllib2.Request(url, req_data)
+        request = urllib2.Request(self.url, req_data)
         request.get_method = lambda: self.method
 
         # 添加头
@@ -278,6 +293,9 @@ class Request2Doc(object):
         self.response_body = res.read()
         return True
 
+    def set_response_body(self, body):
+        self.response_body = body
+
     def get_response_data(self):
         """解析请求返回的数据"""
         if not self.response_data:
@@ -286,7 +304,7 @@ class Request2Doc(object):
 
     def render_string(self, tpl_path):
         """渲染数据，输出为字符串"""
-        request_get_dict = self.args
+        request_get_dict = self.args()
         request_post_dict = self.forms
 
         # 处理接口返回的数据为可展示的形式
@@ -311,12 +329,9 @@ class Request2Doc(object):
 
 
 def build_request2doc_handler(url, method, request_forms_data="", headers=[], cookie_jar=None, slice_startswith=None):
-    parsed = urlparse.urlparse(url)
-    url = "%s://%s%s" % (parsed.scheme, parsed.netloc, parsed.path)
-    request_args = {k: v[0] for k, v in urlparse.parse_qs(parsed.query).items()}
     request_forms = {k: v[0] for k, v in urlparse.parse_qs(request_forms_data).items()}
 
-    handler = Request2Doc(url, method, request_args, request_forms)
+    handler = Request2Doc(url, method, request_forms)
     if slice_startswith:
         handler.set_slice_startswith(slice_startswith)
     if cookie_jar:
@@ -338,14 +353,16 @@ def main():
     parser.add_argument('-H', '--header', nargs='?', action='append', help=u'自定义的附加请求头')
     args = parser.parse_args()
 
-    handler = build_request2doc_handler(
-        args.url,
-        'POST' if args.data else 'GET',
-        request_forms_data=args.data,
-        headers=args.header,
-        cookie_jar=args.cookie_jar,
-        slice_startswith=args.slice_startswith
-    )
+    request_forms = {k: v[0] for k, v in urlparse.parse_qs(args.data).items()}
+    method = 'POST' if args.data else 'GET'
+
+    handler = Request2Doc(args.url, method, request_forms)
+    if args.slice_startswith:
+        handler.set_slice_startswith(args.slice_startswith)
+    if args.cookie_jar:
+        handler.set_cookie_jar(args.cookie_jar)
+    if args.header:
+        handler.set_headers(args.header)
 
     if not handler.request():
         pass

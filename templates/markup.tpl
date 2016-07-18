@@ -1,6 +1,8 @@
-h3.{{ url.split('/')[3:]|join('/') }}
+{%- if url %}h3.{{ url.split('/')[3:]|join('/') }}{%- endif %}
+{%- if method %}
 METHOD: {{ method }}
 ----
+{%- endif %}
 {%- if request_get_items %}
 GET参数:
 ||Name||Type||Description||
