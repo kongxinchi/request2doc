@@ -62,5 +62,9 @@
       "success": true
     }
     {code}
-![image](https://raw.githubusercontent.com/kong-lo/request2doc/master/markup_example.png)
+![image](https://raw.githubusercontent.com/kong-lo/request2doc/master/resource/markup_example.png)
    
+
+## GUI
+![image](https://raw.githubusercontent.com/kong-lo/request2doc/master/resource/gui_example.png)
+    
