@@ -17,7 +17,7 @@ class InputPanel(wx.Panel):
         wx.Panel.__init__(self, parent, -1)
 
         # URL输入框
-        self.method_choice = wx.Choice(self, -1, size=(50, -1), choices=[u'GET', u'POST'])
+        self.method_choice = wx.Choice(self, -1, size=(80, -1), choices=[u'GET', u'POST'])
         self.method_choice.SetSelection(0)
         self.url_text = wx.TextCtrl(self, -1)
         url_sizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "URL"))

@@ -314,7 +314,7 @@ class Request2Doc(object):
 
         return Environment()\
             .from_string(open(tpl_path, 'rb').read().decode('utf-8'))\
-            .render(url=self.url,
+            .render(url=self.url.split('?')[0],
                     method=self.method,
                     request_get_items=[ExpandItem([k], [v], None, True).row_data() for k, v in request_get_dict.items()],
                     request_post_items=[ExpandItem([k], [v], None, True).row_data() for k, v in request_post_dict.items()],
