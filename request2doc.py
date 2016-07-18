@@ -254,6 +254,9 @@ class Request2Doc(object):
                 (parts[0].strip(), parts[1].strip())
             )
 
+    def validate(self):
+        pass # TODO
+
     def request(self):
         """发送请求"""
         url = self.url + '?' + urllib.urlencode(self.args)
@@ -307,6 +310,22 @@ class Request2Doc(object):
             f.write(content.encode('utf-8'))
 
 
+def build_request2doc_handler(url, method, request_forms_data="", headers=[], cookie_jar=None, slice_startswith=None):
+    parsed = urlparse.urlparse(url)
+    url = "%s://%s%s" % (parsed.scheme, parsed.netloc, parsed.path)
+    request_args = {k: v[0] for k, v in urlparse.parse_qs(parsed.query).items()}
+    request_forms = {k: v[0] for k, v in urlparse.parse_qs(request_forms_data).items()}
+
+    handler = Request2Doc(url, method, request_args, request_forms)
+    if slice_startswith:
+        handler.set_slice_startswith(slice_startswith)
+    if cookie_jar:
+        handler.set_cookie_jar(cookie_jar)
+    if headers:
+        handler.set_headers(headers)
+    return handler
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser()
@@ -319,19 +338,14 @@ def main():
     parser.add_argument('-H', '--header', nargs='?', action='append', help=u'自定义的附加请求头')
     args = parser.parse_args()
 
-    parsed = urlparse.urlparse(args.url)
-    url = "%s://%s%s" % (parsed.scheme, parsed.netloc, parsed.path)
-    request_args = {k: v[0] for k, v in urlparse.parse_qs(parsed.query).items()}
-    request_forms = {k: v[0] for k, v in urlparse.parse_qs(args.data).items()}
-    method = 'POST' if args.data else 'GET'
-
-    handler = Request2Doc(url, method, request_args, request_forms)
-    if args.slice_startswith:
-        handler.set_slice_startswith(args.slice_startswith)
-    if args.cookie_jar:
-        handler.set_cookie_jar(args.cookie_jar)
-    if args.header:
-        handler.set_headers(args.header)
+    handler = build_request2doc_handler(
+        args.url,
+        'POST' if args.data else 'GET',
+        request_forms_data=args.data,
+        headers=args.header,
+        cookie_jar=args.cookie_jar,
+        slice_startswith=args.slice_startswith
+    )
 
     if not handler.request():
         pass

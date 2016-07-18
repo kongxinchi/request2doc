@@ -16,17 +16,17 @@ class InputPanel(wx.Panel):
         wx.Panel.__init__(self, parent, -1)
 
         # URL输入框
+        self.method_choice = wx.Choice(self, -1, size=(50, -1), choices=[u'GET', u'POST'])
+        self.method_choice.SetSelection(0)
         self.url_text = wx.TextCtrl(self, -1)
         url_sizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "URL"))
-        url_sizer.Add(self.url_text, 1, wx.EXPAND)
+        url_sizer.Add(self.method_choice, 0)
+        url_sizer.Add(self.url_text, 1, wx.EXPAND | wx.LEFT, 2)
 
-        # 请求方式与参数
-        self.method_choice = wx.Choice(self, -1, size=(100, -1), choices=[u'GET', u'POST'])
-        self.method_choice.SetSelection(0)
-        self.params_text = wx.TextCtrl(self, -1, size=(-1, 50), style=wx.TE_MULTILINE)
-        params_sizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Params"), wx.VERTICAL)
-        params_sizer.Add(self.method_choice, 0)
-        params_sizer.Add(self.params_text, 1, wx.EXPAND | wx.TOP, 5)
+        # 参数
+        self.post_params_text = wx.TextCtrl(self, -1, size=(-1, 50), style=wx.TE_MULTILINE)
+        post_params_sizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Post Params"), wx.VERTICAL)
+        post_params_sizer.Add(self.post_params_text, 1, wx.EXPAND | wx.TOP, 5)
 
         # 请求头
         self.headers_text = wx.TextCtrl(self, -1, size=(-1, 50), style=wx.TE_MULTILINE)
@@ -44,16 +44,16 @@ class InputPanel(wx.Panel):
         slice_sizer.Add(self.slice_text, 1, wx.EXPAND)
 
         # 按钮
-        transform_button = wx.Button(self, -1, u'Only Transform', size=(130, 30))
-        request_transform_button = wx.Button(self, -1, u'Request And Transform', size=(170, 30))
+        self.transform_button = wx.Button(self, -1, u'Only Transform', size=(130, 30))
+        self.request_transform_button = wx.Button(self, -1, u'Request And Transform', size=(170, 30))
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         button_sizer.Add((0, 0), 1)
-        button_sizer.Add(transform_button, 0)
-        button_sizer.Add(request_transform_button, 0)
+        button_sizer.Add(self.transform_button, 0)
+        button_sizer.Add(self.request_transform_button, 0)
 
         main_box = wx.BoxSizer(wx.VERTICAL)
         main_box.Add(url_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 5)
-        main_box.Add(params_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 5)
+        main_box.Add(post_params_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 5)
         main_box.Add(headers_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 5)
         main_box.Add(template_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 5)
         main_box.Add(slice_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, 5)
@@ -61,6 +61,9 @@ class InputPanel(wx.Panel):
         self.SetSizer(main_box)
 
         self.preload_templates()
+
+        self.Bind(wx.EVT_BUTTON, self.on_button_click, self.request_transform_button)
+        self.Bind(wx.EVT_BUTTON, self.on_button_click, self.transform_button)
 
     def preload_templates(self):
         names = []
@@ -70,6 +73,23 @@ class InputPanel(wx.Panel):
 
         self.template_choice.SetItems(names)
         self.template_choice.SetSelection(0)
+
+    def on_button_click(self, event):
+        url = self.url_text.GetValue()
+        method = self.method_choice.GetStringSelection()
+        params_value = self.post_params_text.GetValue()
+        headers_value = self.headers_text.GetValue()
+        slice_startswith = self.slice_text.GetValue()
+        template_name = self.template_choice.GetStringSelection()
+
+        handler = build_request2doc_handler(
+            url, method,
+            request_forms_data=params_value,
+            headers=headers_value.split('\n'),
+            slice_startswith=slice_startswith
+        )
+        handler.request()
+        self.GetParent().output_panel.response_text.SetValue(handler.response_body)
 
 
 class OutputPanel(wx.Panel):
@@ -97,16 +117,25 @@ class Request2DocFrame(wx.Frame):
         wx.Frame.__init__(self, None, -1, u'Request To Document GUI', size=(1000, 500))
 
         main_box = wx.BoxSizer(wx.HORIZONTAL)
-        input_panel = InputPanel(self)
-        output_panel = OutputPanel(self)
+        self.input_panel = InputPanel(self)
+        self.output_panel = OutputPanel(self)
 
-        main_box.Add(input_panel, 4, wx.EXPAND | wx.ALL, 5)
-        main_box.Add(output_panel, 6, wx.EXPAND | wx.ALL, 5)
+        main_box.Add(self.input_panel, 4, wx.EXPAND | wx.ALL, 5)
+        main_box.Add(self.output_panel, 6, wx.EXPAND | wx.ALL, 5)
 
         self.SetSizer(main_box)
         self.SetAutoLayout(True)
         self.Centre()
         self.Show()
+
+    def set_response_content(self, content):
+        self.output_panel.response_text.SetValue(content)
+
+    def get_response_content(self):
+        return self.output_panel.response_text.GetValue()
+
+    def set_document_content(self, content):
+        self.output_panel.doc_text.SetValue(content)
 
 if __name__ == '__main__':
     app = wx.App()
