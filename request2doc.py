@@ -319,7 +319,7 @@ class Request2Doc(object):
                     request_get_items=[ExpandItem([k], [v], None, True).row_data() for k, v in request_get_dict.items()],
                     request_post_items=[ExpandItem([k], [v], None, True).row_data() for k, v in request_post_dict.items()],
                     response_items=[item.row_data() for item in mixer.expand_item_list()],
-                    response_body=json.dumps(self.get_response_data(), indent=2))
+                    response_body=json.dumps(self.get_response_data(), ensure_ascii=False, indent=2))
 
     def render_save_as(self, tpl_path, output_path):
         """渲染数据，并保存到指定路径"""
