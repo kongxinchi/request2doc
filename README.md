@@ -7,7 +7,6 @@
 ## Require
     
     pip install jinja2
-    pip install py2exe
     
     wxpython: https://www.wxpython.org/download.php
 
